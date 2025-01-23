@@ -31,7 +31,7 @@ void Camera::Focus_Camera(double focal_distance,double aspect_ratio,
 void Camera::Set_Resolution(const ivec2& number_pixels_input)
 {
     number_pixels=number_pixels_input;
-    delete[] colors;
+    if(colors) delete[] colors;
     colors=new Pixel[number_pixels[0]*number_pixels[1]];
     min=-0.5*image_size;
     max=0.5*image_size;
@@ -42,6 +42,6 @@ void Camera::Set_Resolution(const ivec2& number_pixels_input)
 vec3 Camera::World_Position(const ivec2& pixel_index)
 {
     vec3 result;
-    TODO;
+    result = film_position + (horizontal_vector * Cell_Center(pixel_index)[0]) + (vertical_vector * Cell_Center(pixel_index)[1]);
     return result;
 }
