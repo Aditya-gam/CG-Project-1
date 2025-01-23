@@ -2,57 +2,38 @@
 #define __RENDER_WORLD_H__
 
 #include <vector>
-#include <utility>
 #include "camera.h"
+#include "hierarchy.h"
 #include "object.h"
-// #include "acceleration.h"
 
 class Light;
 class Shader;
 class Ray;
-class Color;
-
-struct Shaded_Object
-{
-    const Object* object = nullptr;
-    const Shader* shader = nullptr;
-};
 
 class Render_World
 {
 public:
     Camera camera;
 
-    // This is the background shader that you should use in case no other
-    // objects are intersected.  If this pointer is null, then use black as the
-    // color instead.
-    const Shader* background_shader = nullptr;
+    Shader *background_shader;
+    std::vector<Object*> objects;
+    std::vector<Light*> lights;
+    vec3 ambient_color;
+    double ambient_intensity;
 
-    // Use these to get access to objects and lights in the scene.
-    std::vector<Shaded_Object> objects;
-    std::vector<const Light*> lights;
+    bool enable_shadows;
+    int recursion_depth_limit;
 
-    // Store pointers to these for deallocation.  You should not use these
-    // directly.  Use the objects array above instead.
-    std::vector<Object*> all_objects;
-    std::vector<Shader*> all_shaders;
-    std::vector<Color*> all_colors;
-    
-    const Color* ambient_color = nullptr;
-    double ambient_intensity = 0;
+    Hierarchy hierarchy;
 
-    bool enable_shadows = true;
-    int recursion_depth_limit = 3;
-
-//     Acceleration acceleration;
-
-    Render_World() = default;
+    Render_World();
     ~Render_World();
 
     void Render_Pixel(const ivec2& pixel_index);
     void Render();
+    void Initialize_Hierarchy();
 
-    vec3 Cast_Ray(const Ray& ray,int recursion_depth) const;
-    std::pair<Shaded_Object,Hit> Closest_Intersection(const Ray& ray) const;
+    vec3 Cast_Ray(const Ray& ray,int recursion_depth);
+    Hit Closest_Intersection(const Ray& ray);
 };
 #endif

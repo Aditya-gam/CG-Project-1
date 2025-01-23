@@ -6,18 +6,20 @@
 class Phong_Shader : public Shader
 {
 public:
-    const Color* color_ambient = nullptr;
-    const Color* color_diffuse = nullptr;
-    const Color* color_specular = nullptr;
-    double specular_power = 0;
+    vec3 color_ambient,color_diffuse,color_specular;
+    double specular_power;
 
-    Phong_Shader(const Parse* parse,std::istream& in);
-    virtual ~Phong_Shader() = default;
+    Phong_Shader(Render_World& world_input,
+        const vec3& color_ambient,
+        const vec3& color_diffuse,
+        const vec3& color_specular,
+        double specular_power)
+        :Shader(world_input),color_ambient(color_ambient),
+        color_diffuse(color_diffuse),color_specular(color_specular),
+        specular_power(specular_power)
+    {}
 
-    virtual vec3 Shade_Surface(const Render_World& render_world,const Ray& ray,
-        const Hit& hit,const vec3& intersection_point,const vec3& normal,
-        int recursion_depth) const override;
-
-    static constexpr const char* parse_name = "phong_shader";
+    virtual vec3 Shade_Surface(const Ray& ray,const vec3& intersection_point,
+        const vec3& normal,int recursion_depth) const override;
 };
 #endif

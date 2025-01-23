@@ -1,30 +1,38 @@
 #include "plane.h"
-#include "hit.h"
 #include "ray.h"
 #include <cfloat>
 #include <limits>
 
-Plane::Plane(const Parse* parse,std::istream& in)
-{
-    in>>name>>x>>normal;
-    normal=normal.normalized();
-}
-
-// Intersect with the plane.  The plane's normal points outside.
+// Intersect with the half space defined by the plane.  The plane's normal
+// points outside.  If the ray starts on the "inside" side of the plane, be sure
+// to record a hit with t=0 as the first entry in hits.
 Hit Plane::Intersection(const Ray& ray, int part) const
 {
-    TODO;
-    return {};
+    double u_dot_n = dot(ray.direction, normal);
+    double t;
+
+    if (u_dot_n != 0) { // if the ray is not parallel with the plane, intersect
+    	t = dot((x1 - ray.endpoint), normal) / u_dot_n;
+    	if (t > 0)
+    	    return {this, t, part};
+    	else
+    	    return {nullptr, 0, part};
+    }
+
+    return {nullptr, 0, part};
 }
 
-vec3 Plane::Normal(const Ray& ray, const Hit& hit) const
+vec3 Plane::Normal(const vec3& point, int part) const
 {
     return normal;
 }
 
-std::pair<Box,bool> Plane::Bounding_Box(int part) const
+// There is not a good answer for the bounding box of an infinite object.
+// The safe thing to do is to return a box that contains everything.
+Box Plane::Bounding_Box(int part) const
 {
     Box b;
-    b.Make_Full();
-    return {b,true};
+    b.hi.fill(std::numeric_limits<double>::max());
+    b.lo=-b.hi;
+    return b;
 }

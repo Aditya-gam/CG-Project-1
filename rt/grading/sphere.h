@@ -3,7 +3,7 @@
 
 #include "object.h"
 
-class Parse;
+#include <cmath>
 
 class Sphere : public Object
 {
@@ -11,13 +11,12 @@ class Sphere : public Object
     double radius;
 
 public:
-    Sphere(const Parse* parse,std::istream& in);
-    virtual ~Sphere() = default;
+    Sphere(const vec3& center_input,double radius_input)
+        :center(center_input),radius(radius_input)
+    {}
 
     virtual Hit Intersection(const Ray& ray, int part) const override;
-    virtual vec3 Normal(const Ray& ray, const Hit& hit) const override;
-    virtual std::pair<Box,bool> Bounding_Box(int part) const override;
-
-    static constexpr const char* parse_name = "sphere";
+    virtual vec3 Normal(const vec3& point, int part) const override;
+    virtual Box Bounding_Box(int part) const override;
 };
 #endif

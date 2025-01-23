@@ -67,9 +67,16 @@ Hit Mesh::Intersection(const Ray& ray, int part) const
 }
 
 // Compute the normal direction for the triangle with index part.
-vec3 Mesh::Normal(const Ray& ray, const Hit& hit) const
+// vec3 Mesh::Normal(const Ray& ray, const Hit& hit) const
+// {
+//     assert(hit.triangle>=0);
+//     TODO;
+//     return vec3();
+// }
+
+vec3 Mesh::Normal(const vec3& point, int part) const
 {
-    assert(hit.triangle>=0);
+    assert(part>=0);
     TODO;
     return vec3();
 }
