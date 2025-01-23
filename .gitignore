@@ -1,0 +1,150 @@
+
+#   General OS Files
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+Desktop.ini
+
+# Linux
+.*.swp
+.*.swo
+.svn
+
+#   C/C++ Build Artifacts
+# Object files, static and shared libs, plus executables
+*.lo
+*.la
+*.al
+*.lib
+*.a
+*.la
+*.so
+*.dylib
+*.dll
+*.dll.a
+*.out
+*.app
+*.i
+*.ii
+*.inc
+*.s
+*.pch
+
+# CMake/Make build directories
+build/
+Build/
+[Bb]in/
+[Cc]make[Bb]uild*/
+cmake_install.cmake
+CMakeCache.txt
+Makefile
+CMakeFiles/
+Testing/
+CTestTestfile.cmake
+
+# Visual Studio
+*.vcxproj*
+*.vcproj*
+*.ncb
+*.sdf
+*.vcxproj.user
+*.vcxproj.filters
+*.user
+*.ipch
+*.opensdf
+*.suo
+*.sln
+*.pdb
+
+# Xcode
+*.xcworkspace
+*.xcuserdata/
+*.xcuserstate
+*.xcodeproj/*
+
+# Code::Blocks
+*.cbp
+*.depend
+*.layout
+
+#   Python
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+.venv/
+env/
+.venv*/ 
+env_*/ 
+ENV/
+.ENV/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# pyenv
+.python-version
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+#   Other Tools & IDEs
+# JetBrains IDEs (CLion, PyCharm, etc.)
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# VSCode settings
+.vscode/
+.vscode-test/
+
+#   Logs, Temporary, and Misc
+
+*.log
+*.tmp
+*.temp
+*.cache
+*.pid
+*.seed
+*.pid.lock
+*.gz
+*.zip
+*.tar
+*.rar
+*.7z
+
+# Coverage reports
+coverage/
+*.lcov
+*.coverage
+.coverage.*
+
+# CTags
+tags
+TAGS
+
+# Backup or autosave
+*~
+*.bak
+
