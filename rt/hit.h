@@ -1,34 +1,30 @@
-// #ifndef __HIT_H__
-// #define __HIT_H__
+#ifndef __HIT_H__
+#define __HIT_H__
 
-// #include "vec.h"
+#include "vec.h"
 
-// // Records information about an intersection, which may be needed later for a
-// // subsequent call to Normal.
-// struct Hit
-// {
-//     // Distance along the ray at which this occurred; if there was no
-//     // intersection, set this to a negative value.
-//     // double dist = -1;
+// Records information about an intersection, which may be needed later for a
+// subsequent call to Normal.
+struct Hit
+{
+    // Distance along the ray at which this occurred; if there was no
+    // intersection, set this to a negative value.
+    double dist = -1;
 
-//     // Which triangle was intersected (for meshes)
-//     int triangle = -1;
+    // Which triangle was intersected (for meshes)
+    int triangle = -1;
 
-//     // uv coordinates of intersection within triangle (for meshes)
-//     vec2 uv = {};
+    // uv coordinates of intersection within triangle (for meshes)
+    vec2 uv = {};
 
-//     const Object* object; // object that was intersected
-//     double dist; // distance along ray to intersection location
-//     int part; // which part was intersected (eg, for meshes)
+    bool Valid() const {return dist>=0;}
+};
 
-//     bool Valid() const {return dist>=0;}
-// };
+// Useful for debugging
+inline std::ostream& operator<<(std::ostream& o, const Hit& h)
+{
+    return o << "(dist: " << h.dist << "; triangle: " << h.triangle
+             << "; uv: " << h.uv<<")";
+}
 
-// // Useful for debugging
-// inline std::ostream& operator<<(std::ostream& o, const Hit& h)
-// {
-//     return o << "(dist: " << h.dist << "; triangle: " << h.triangle
-//              << "; uv: " << h.uv<<")";
-// }
-
-// #endif
+#endif

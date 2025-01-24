@@ -1,51 +1,68 @@
-#include <algorithm>
 #include "light.h"
+#include "parse.h"
+#include "object.h"
 #include "phong_shader.h"
 #include "ray.h"
 #include "render_world.h"
-#include "object.h"
+
+Phong_Shader::Phong_Shader(const Parse* parse, std::istream& in)
+{
+    in >> name;
+    color_ambient = parse->Get_Color(in);
+    color_diffuse = parse->Get_Color(in);
+    color_specular = parse->Get_Color(in);
+    in >> specular_power;
+}
 
 vec3 Phong_Shader::
-Shade_Surface(const Ray& ray,const vec3& intersection_point,
-    const vec3& normal,int recursion_depth) const
+Shade_Surface(const Render_World& render_world, const Ray& ray, const Hit& hit,
+    const vec3& intersection_point, const vec3& normal, int recursion_depth) const
 {
-    vec3 color;
-    
-    // I = (L_a * R_a) + (L_d * R_d * max(n*l, 0)) + (L_s * R_s * max(v*r, 0))
+    vec3 color(0, 0, 0);
 
-    // Ambient calculation
-    vec3 ambient = world.ambient_color * world.ambient_intensity * this->color_ambient;
+    // Retrieve the color components using Get_Color
+    vec3 ambient_color = color_ambient->Get_Color(hit.uv);
+    vec3 diffuse_color = color_diffuse->Get_Color(hit.uv);
+    vec3 specular_color = color_specular->Get_Color(hit.uv);
 
-    color = ambient;
+    // Ambient component
+    vec3 ambient = render_world.ambient_intensity *
+                   render_world.ambient_color->Get_Color(vec2(0, 0)) * ambient_color;
+    color += ambient;
 
-    // Adding diffuse and specular calculation to ambient
-    vec3 diffuse, specular;
+    // Iterate over all lights
+    for (const auto* light : render_world.lights)
+    {
+        vec3 light_dir = (light->position - intersection_point).normalized();
+        vec3 light_intensity = light->Emitted_Light(light_dir);
 
-    for (auto light : world.lights) {
-        vec3 l = light->position - intersection_point;  // light ray
-        vec3 r = -l + 2.0 * dot(l, normal) * normal;  //reflection ray
+        // Shadow check
+        bool in_shadow = false;
+        if (render_world.enable_shadows)
+        {
+            Ray shadow_ray(intersection_point + normal * small_t, light_dir);
+            auto [shadowed_object, shadow_hit] = render_world.Closest_Intersection(shadow_ray);
 
-        if(world.enable_shadows) {
-            Ray shadow_ray(intersection_point, l);
-            Hit shadow_hit = world.Closest_Intersection(shadow_ray);
-            if(!shadow_hit.object || shadow_hit.dist > l.magnitude()) {
-                diffuse = this->color_diffuse * light->Emitted_Light(l);
-                diffuse *= std::max(dot(normal, l.normalized()), 0.0);
-                color += diffuse;
-
-                specular = this->color_specular * light->Emitted_Light(l);
-                specular *= pow(std::max(dot(-ray.direction, r.normalized()), 0.0), specular_power);
-                color += specular;
+            if (shadow_hit.dist >= small_t && shadow_hit.dist < (light->position - intersection_point).magnitude())
+            {
+                in_shadow = true;
             }
         }
-        else {
-            diffuse = this->color_diffuse * light->Emitted_Light(l);
-            diffuse *= std::max(dot(normal, l.normalized()), 0.0);
-            color += diffuse;
 
-            specular = this->color_specular * light->Emitted_Light(l);
-            specular *= pow(std::max(dot(-ray.direction, r.normalized()), 0.0), specular_power);
-            color += specular;
+        if (!in_shadow)
+        {
+            // Diffuse component
+            double diffuse_factor = std::max(dot(normal, light_dir), 0.0);
+            vec3 diffuse = diffuse_color * light_intensity * diffuse_factor;
+
+            // Specular component
+            vec3 view_dir = -ray.direction.normalized();
+            vec3 reflection_dir = (2 * dot(normal, light_dir) * normal - light_dir).normalized();
+            double specular_factor = pow(std::max(dot(view_dir, reflection_dir), 0.0), specular_power);
+            vec3 specular = specular_color * light_intensity * specular_factor;
+
+            // Add contributions
+            color += diffuse + specular;
         }
     }
 

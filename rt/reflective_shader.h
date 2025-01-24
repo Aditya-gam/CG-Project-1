@@ -7,15 +7,16 @@
 class Reflective_Shader : public Shader
 {
 public:
-    Shader* shader;
+    const Shader* shader = nullptr;
     double reflectivity;
     
-    Reflective_Shader(Render_World& world_input,Shader* shader_input,double reflectivity)
-        :Shader(world_input),shader(shader_input),
-        reflectivity(std::max(0.0,std::min(1.0,reflectivity)))
-    {}
+    Reflective_Shader(const Parse* parse,std::istream& in);
+    virtual ~Reflective_Shader() = default;
+    
+    virtual vec3 Shade_Surface(const Render_World& render_world,const Ray& ray,
+        const Hit& hit,const vec3& intersection_point,const vec3& normal,
+        int recursion_depth) const override;
 
-     virtual vec3 Shade_Surface(const Ray& ray,const vec3& intersection_point,
-         const vec3& normal,int recursion_depth) const override;
+    static constexpr const char* parse_name = "reflective_shader";
 };
 #endif

@@ -1,38 +1,50 @@
 #include "plane.h"
+#include "hit.h"
 #include "ray.h"
-#include <cfloat>
 #include <limits>
+#include <cmath>
 
-// Intersect with the half space defined by the plane.  The plane's normal
-// points outside.  If the ray starts on the "inside" side of the plane, be sure
-// to record a hit with t=0 as the first entry in hits.
-Hit Plane::Intersection(const Ray& ray, int part) const
+Plane::Plane(const Parse* parse, std::istream& in)
 {
-    double u_dot_n = dot(ray.direction, normal);
-    double t;
-
-    if (u_dot_n != 0) { // if the ray is not parallel with the plane, intersect
-    	t = dot((x1 - ray.endpoint), normal) / u_dot_n;
-    	if (t > 0)
-    	    return {this, t, part};
-    	else
-    	    return {nullptr, 0, part};
-    }
-
-    return {nullptr, 0, part};
+    in >> name >> x >> normal;
+    normal = normal.normalized();
 }
 
-vec3 Plane::Normal(const vec3& point, int part) const
+// Intersect with the plane. The plane's normal points outside.
+Hit Plane::Intersection(const Ray& ray, int part) const
 {
+    Hit hit;
+    hit.dist = -1; // Initialize to indicate no intersection
+    hit.triangle = part; // For compatibility with meshes
+
+    // Calculate the denominator of the intersection equation
+    double denominator = dot(ray.direction, normal);
+
+    // Check if the ray is parallel to the plane
+    if (std::abs(denominator) > small_t)
+    {
+        // Compute the distance t along the ray
+        double t = dot(x - ray.endpoint, normal) / denominator;
+
+        // Check if the intersection is valid
+        if (t >= small_t)
+        {
+            hit.dist = t; // Set the intersection distance
+        }
+    }
+
+    return hit; // If no valid intersection, hit.dist will remain -1
+}
+
+vec3 Plane::Normal(const Ray& ray, const Hit& hit) const
+{
+    // The normal of the plane is constant
     return normal;
 }
 
-// There is not a good answer for the bounding box of an infinite object.
-// The safe thing to do is to return a box that contains everything.
-Box Plane::Bounding_Box(int part) const
+std::pair<Box, bool> Plane::Bounding_Box(int part) const
 {
     Box b;
-    b.hi.fill(std::numeric_limits<double>::max());
-    b.lo=-b.hi;
-    return b;
+    b.Make_Full(); // Planes are infinite; they fill the entire space
+    return {b, true};
 }

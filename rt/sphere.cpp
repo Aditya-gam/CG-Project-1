@@ -1,38 +1,60 @@
 #include "sphere.h"
 #include "ray.h"
+#include <cmath>
+#include <limits>
 
-// Determine if the ray intersects with the sphere
+Sphere::Sphere(const Parse* parse, std::istream& in)
+{
+    in >> name >> center >> radius;
+}
+
 Hit Sphere::Intersection(const Ray& ray, int part) const
 {
-    double discriminant = pow(dot(ray.direction, ray.endpoint - center), 2) - (dot(ray.direction, ray.direction) * (dot(ray.endpoint - center, ray.endpoint - center) - pow(radius, 2)));
-    double t_1 = 0;
-    double t_2 = 0;
+    vec3 oc = ray.endpoint - center;
+    double a = dot(ray.direction, ray.direction);
+    double b = 2 * dot(ray.direction, oc);
+    double c = dot(oc, oc) - radius * radius;
 
-    if (discriminant > 0) {
-        t_1 = -dot(ray.direction, ray.endpoint - center) + sqrt(discriminant) / dot(ray.direction, ray.direction);
-        t_2 = -dot(ray.direction, ray.endpoint - center) - sqrt(discriminant) / dot(ray.direction, ray.direction);
+    double discriminant = b * b - 4 * a * c;
 
-        if (t_1 < t_2 && t_1 >= small_t) {
-            return {this, t_1, part};
+    Hit hit;
+
+    if (discriminant >= 0)
+    {
+        double sqrt_discriminant = sqrt(discriminant);
+        double t1 = (-b - sqrt_discriminant) / (2 * a);
+        double t2 = (-b + sqrt_discriminant) / (2 * a);
+
+        if (t1 >= small_t && t2 >= small_t)
+        {
+            hit.dist = std::min(t1, t2);
+            hit.triangle = part; // Using part for compatibility with meshes
         }
-        else if (t_1 >= t_2 && t_2 >= small_t){
-            return {this, t_2, part};
+        else if (t1 >= small_t)
+        {
+            hit.dist = t1;
+            hit.triangle = part;
+        }
+        else if (t2 >= small_t)
+        {
+            hit.dist = t2;
+            hit.triangle = part;
         }
     }
 
-    return {nullptr, t_1, part};
+    return hit; // If no valid intersection, hit.dist will remain -1
 }
 
-vec3 Sphere::Normal(const vec3& point, int part) const
+
+vec3 Sphere::Normal(const Ray& ray, const Hit& hit) const
 {
-    vec3 normal;
-    normal = (point - center) / radius;
-    return normal;
+    vec3 intersection_point = ray.Point(hit.dist);
+    return (intersection_point - center).normalized();
 }
 
-Box Sphere::Bounding_Box(int part) const
+std::pair<Box, bool> Sphere::Bounding_Box(int part) const
 {
-    Box box;
-    TODO; // calculate bounding box
-    return box;
+    vec3 min_corner = center - vec3(radius, radius, radius);
+    vec3 max_corner = center + vec3(radius, radius, radius);
+    return {{min_corner, max_corner}, true};
 }

@@ -1,118 +1,165 @@
 #include "mesh.h"
 #include <fstream>
-#include <string>
 #include <limits>
+#include <string>
+#include <algorithm>
+#include <cassert>
 
-// Consider a triangle to intersect a ray if the ray intersects the plane of the
-// triangle with barycentric weights in [-weight_tolerance, 1+weight_tolerance]
 static const double weight_tolerance = 1e-4;
 
-// Read in a mesh from an obj file.  Populates the bounding box and registers
+Mesh::Mesh(const Parse* parse, std::istream& in)
+{
+    std::string file;
+    in >> name >> file;
+    Read_Obj(file.c_str());
+}
+
+// Read in a mesh from an obj file. Populates the bounding box and registers
 // one part per triangle (by setting number_parts).
 void Mesh::Read_Obj(const char* file)
 {
     std::ifstream fin(file);
-    if(!fin)
+    if (!fin)
     {
         exit(EXIT_FAILURE);
     }
-    std::string line;
-    ivec3 e;
-    vec3 v;
-    box.Make_Empty();
-    while(fin)
-    {
-        getline(fin,line);
 
-        if(sscanf(line.c_str(), "v %lg %lg %lg", &v[0], &v[1], &v[2]) == 3)
+    std::string line;
+    ivec3 e, t;
+    vec3 v;
+    vec2 u;
+
+    while (getline(fin, line))
+    {
+        if (sscanf(line.c_str(), "v %lg %lg %lg", &v[0], &v[1], &v[2]) == 3)
         {
             vertices.push_back(v);
-            box.Include_Point(v);
         }
 
-        if(sscanf(line.c_str(), "f %d %d %d", &e[0], &e[1], &e[2]) == 3)
+        if (sscanf(line.c_str(), "f %d %d %d", &e[0], &e[1], &e[2]) == 3)
         {
-            for(int i=0;i<3;i++) e[i]--;
+            for (int i = 0; i < 3; i++) e[i]--;
             triangles.push_back(e);
         }
+
+        if (sscanf(line.c_str(), "vt %lg %lg", &u[0], &u[1]) == 2)
+        {
+            uvs.push_back(u);
+        }
+
+        if (sscanf(line.c_str(), "f %d/%d %d/%d %d/%d", &e[0], &t[0], &e[1], &t[1], &e[2], &t[2]) == 6)
+        {
+            for (int i = 0; i < 3; i++) e[i]--;
+            triangles.push_back(e);
+            for (int i = 0; i < 3; i++) t[i]--;
+            triangle_texture_index.push_back(t);
+        }
     }
-    number_parts=triangles.size();
+    num_parts = triangles.size();
 }
 
-// Check for an intersection against the ray.  See the base class for details.
+// Check for an intersection against the ray.
 Hit Mesh::Intersection(const Ray& ray, int part) const
 {
-    double min_t = std::numeric_limits<double>::max();
-    double dist = 0;
-    Hit hit = {nullptr, 0, 0};
+    Hit closest_hit;
+    closest_hit.dist = std::numeric_limits<double>::infinity();
 
-    if(part < 0) {
-        for(int i = 0; i < triangles.size(); i++) {
-            if(Intersect_Triangle(ray, i, dist)) {
-                if(dist < min_t) {
-                    min_t = dist;
-                    hit = {this, dist, i};
-                }
+    if (part >= 0)
+    {
+        closest_hit = Intersect_Triangle(ray, part);
+    }
+    else
+    {
+        // Check all triangles
+        for (int i = 0; i < (int)triangles.size(); i++)
+        {
+            Hit hit = Intersect_Triangle(ray, i);
+            if (hit.dist >= small_t && hit.dist < closest_hit.dist)
+            {
+                closest_hit = hit;
             }
         }
     }
-    else {
-        if(Intersect_Triangle(ray, part, dist))
-            hit = {this, dist, part};
+
+    if (closest_hit.dist == std::numeric_limits<double>::infinity())
+    {
+        closest_hit.dist = -1; // No intersection found
     }
-    return hit;
+
+    return closest_hit;
 }
 
 // Compute the normal direction for the triangle with index part.
-vec3 Mesh::Normal(const vec3& point, int part) const
+vec3 Mesh::Normal(const Ray& ray, const Hit& hit) const
 {
-    assert(part>=0);
+    assert(hit.triangle >= 0);
 
-    ivec3 current_triangle = triangles[part];
+    ivec3 e = triangles[hit.triangle];
+    vec3 A = vertices[e[0]];
+    vec3 B = vertices[e[1]];
+    vec3 C = vertices[e[2]];
 
-    vec3 AB = vertices[current_triangle[1]] - vertices[current_triangle[0]];
-    vec3 AC = vertices[current_triangle[2]] - vertices[current_triangle[0]];
-
-    return cross(AB, AC).normalized();
+    vec3 normal = cross(B - A, C - A).normalized();
+    return normal;
 }
 
-// This is a helper routine whose purpose is to simplify the implementation
-// of the Intersection routine.  It should test for an intersection between
-// the ray and the triangle with index tri.  If an intersection exists,
-// record the distance and return true.  Otherwise, return false.
-// This intersection should be computed by determining the intersection of
-// the ray and the plane of the triangle.  From this, determine (1) where
-// along the ray the intersection point occurs (dist) and (2) the barycentric
-// coordinates within the triangle where the intersection occurs.  The
-// triangle intersects the ray if dist>small_t and the barycentric weights are
-// larger than -weight_tolerance.  The use of small_t avoid the self-shadowing
-// bug, and the use of weight_tolerance prevents rays from passing in between
-// two triangles.
-bool Mesh::Intersect_Triangle(const Ray& ray, int tri, double& dist) const
+// Helper routine to test for an intersection between a ray and a triangle.
+Hit Mesh::Intersect_Triangle(const Ray& ray, int tri) const
 {
-    ivec3 points = triangles[tri];
-    vec3 v = vertices[points[1]] - vertices[points[0]];
-    vec3 w = vertices[points[2]] - vertices[points[0]];
-    vec3 u = ray.direction;
-    vec3 y = ray.endpoint - vertices[triangles[tri][0]];
+    Hit hit;
+    hit.triangle = -1;
+    hit.dist = -1;
 
-    if (dot(u,this->Normal(u,tri)) == 0)
-        return false;
+    ivec3 e = triangles[tri];
+    vec3 A = vertices[e[0]];
+    vec3 B = vertices[e[1]];
+    vec3 C = vertices[e[2]];
 
-    double beta = dot(cross(u,w), y) / dot(cross(u,w), v);
-    double gamma = dot(cross(u,v), y) / dot(cross(u,v), w);
-    double alpha = 1 - beta - gamma;
+    // Compute triangle plane normal
+    vec3 normal = cross(B - A, C - A);
+    double denominator = dot(normal, ray.direction);
 
-    dist = - dot(cross(v,w), y) / dot(cross(v,w), u);
+    // Check if the ray is parallel to the triangle
+    if (std::abs(denominator) < small_t) return hit;
 
-    return !((alpha < -weight_tol || beta < -weight_tol || gamma < -weight_tol) || dist < small_t);
+    // Compute intersection with the plane
+    double t = dot(A - ray.endpoint, normal) / denominator;
+    if (t < small_t) return hit; // Intersection behind the ray origin
+
+    // Compute intersection point
+    vec3 P = ray.Point(t);
+
+    // Compute barycentric coordinates
+    double total_area = normal.magnitude();
+    double alpha = cross(B - P, C - P).magnitude() / total_area;
+    double beta = cross(C - P, A - P).magnitude() / total_area;
+    double gamma = 1.0 - alpha - beta;
+
+    // Check barycentric coordinates
+    if (alpha >= -weight_tolerance && beta >= -weight_tolerance && gamma >= -weight_tolerance)
+    {
+        hit.dist = t;
+        hit.triangle = tri;
+    }
+
+    return hit;
 }
 
-// Compute the bounding box.  Return the bounding box of only the triangle whose
-// index is part.
-Box Mesh::Bounding_Box(int part) const
+std::pair<Box, bool> Mesh::Bounding_Box(int part) const
 {
-    Box b;
-    TODO;
-    return b;
+    if (part < 0)
+    {
+        Box box;
+        box.Make_Empty();
+        for (const auto& v : vertices)
+            box.Include_Point(v);
+        return {box, false};
+    }
+
+    ivec3 e = triangles[part];
+    vec3 A = vertices[e[0]];
+    Box b = {A, A};
+    b.Include_Point(vertices[e[1]]);
+    b.Include_Point(vertices[e[2]]);
+    return {b, false};
 }

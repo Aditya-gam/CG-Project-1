@@ -8,16 +8,19 @@
 #include "vec.h"
 #include "light.h"
 
+class Color;
+
 class Point_Light : public Light
 {
 public:
-    Point_Light(const vec3& position,const vec3& color,double brightness)
-        :Light(position,color,brightness)
-    {}
+    const Color* color = nullptr; // RGB color components
+    double brightness = 0;
 
-    vec3 Emitted_Light(const vec3& vector_to_light) const
-    {
-        return color*brightness/(4*pi*vector_to_light.magnitude_squared());
-    }
+    Point_Light(const Parse* parse,std::istream& in);
+    virtual ~Point_Light() = default;
+
+    virtual vec3 Emitted_Light(const vec3& vector_to_light) const override;
+
+    static constexpr const char* parse_name = "point_light";
 };
 #endif

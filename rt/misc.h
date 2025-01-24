@@ -1,69 +1,42 @@
-#ifndef __MISC_H__
-#define __MISC_H__
+#include "parse.h"
+#include "texture.h"
+#include "dump_png.h"
+#include "misc.h"
+#include <cmath>
 
-#include "vec.h"
-#include <iostream>
-
-// Prints out a TODO message at most once.
-#define TODO {static std::ostream& todo=std::cout<<"TODO: "<<__FUNCTION__<<" in "<<__FILE__<<std::endl;(void)todo;}
-
-typedef unsigned int Pixel;
-
-inline Pixel Pixel_Color(const vec3& color)
+Texture::Texture(const Parse* parse, std::istream& in)
 {
-    unsigned int r=std::min(color[0],1.0)*255;
-    unsigned int g=std::min(color[1],1.0)*255;
-    unsigned int b=std::min(color[2],1.0)*255;
-    return (r<<24)|(g<<16)|(b<<8)|0xff;
+    std::string filename;
+    in >> name >> filename >> use_bilinear_interpolation;
+    Read_png(data, width, height, filename.c_str());
 }
 
-inline vec3 From_Pixel(Pixel color)
+Texture::~Texture()
 {
-    return vec3(color>>24,(color>>16)&0xff,(color>>8)&0xff)/255.;
+    delete[] data;
 }
 
-// Useful for creating indentation in pixel traces
-struct Debug_Scope
+// Helper function to wrap floating-point values into the range [0, 1)
+inline double Wrap_Float(double value, double max)
 {
-    static bool enable;
-    static int level;
-
-    Debug_Scope(){level++;}
-    ~Debug_Scope(){level--;}
-};
-
-// This routine is useful for generating pixel traces.  It only prints when the
-// desired pixel is being traced.
-template<class... Args>
-static void Pixel_Print(Args&&... args)
-{
-    if(!Debug_Scope::enable) return;
-    for(int i=0;i<Debug_Scope::level;i++) std::cout<<"  ";
-    (std::cout<<...<<std::forward<Args>(args))<<std::endl;
+    double wrapped = std::fmod(value, max);
+    if (wrapped < 0) wrapped += max;
+    return wrapped;
 }
 
-/*
-Example usage of these routines:
-
-void foo(const vec3& pt, const Ray& ray)
+vec3 Texture::Get_Color(const vec2& uv) const
 {
-    Debug_Scope scope; 
-    Pixel_Print("calling foo; pt: ",pt,"; ray: ",ray);
+    // Wrap texture coordinates to ensure they are in the range [0, 1)
+    double u = Wrap_Float(uv[0], 1.0);
+    double v = Wrap_Float(uv[1], 1.0);
 
-    blah;
-    blah;
-    blah;
+    // Convert to pixel indices
+    int i = std::min(static_cast<int>(u * width), width - 1);
+    int j = std::min(static_cast<int>(v * height), height - 1);
+
+    // Get the pixel color at the calculated index
+    const Pixel& pixel = data[j * width + i];
+
+    // Convert the Pixel to vec3 (assuming RGB values are scaled between 0 and 255)
+    return vec3(pixel >> 24, (pixel >> 16) & 0xff, (pixel >> 8) & 0xff) / 255.0;
 }
-*/
-
-
-
-inline int wrap(int i,int n)
-{
-    int k=i%n;
-    if(k<0) k+=n;
-    return k;
-}
-
-#endif
-

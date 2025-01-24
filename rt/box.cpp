@@ -2,14 +2,22 @@
 #include "box.h"
 
 // Return whether the ray intersects this box.
-bool Box::Intersection(const Ray& ray) const
+std::pair<bool,double> Box::Intersection(const Ray& ray) const
 {
     TODO;
-    return true;
+    return {true,0};
 }
 
 // Compute the smallest box that contains both *this and bb.
 Box Box::Union(const Box& bb) const
+{
+    Box box;
+    TODO;
+    return box;
+}
+
+// Compute the smallest box that contains both *this and bb.
+Box Box::Intersection(const Box& bb) const
 {
     Box box;
     TODO;
@@ -27,4 +35,25 @@ void Box::Make_Empty()
 {
     lo.fill(std::numeric_limits<double>::infinity());
     hi=-lo;
+}
+
+// Create a box that contains everything.
+void Box::Make_Full()
+{
+    hi.fill(std::numeric_limits<double>::infinity());
+    lo=-hi;
+}
+
+bool Box::Test_Inside(const vec3& pt) const
+{
+    for(int i=0;i<3;i++)
+        if(pt[i]<lo[i] || pt[i]>hi[i])
+            return false;
+    return true;
+}
+
+// Useful for debugging
+std::ostream& operator<<(std::ostream& o, const Box& b)
+{
+    return o << "(lo: " << b.lo << "; hi: " << b.hi << ")";
 }

@@ -4,22 +4,19 @@
 #include "vec.h"
 class Render_World;
 class Ray;
-
-extern bool debug_pixel;
+class Parse;
+struct Hit;
 
 class Shader
 {
 public:
-    Render_World& world;
+    std::string name;
 
-    Shader(Render_World& world_input)
-        :world(world_input)
-    {}
+    Shader() = default;
+    virtual ~Shader() = default;
 
-    virtual ~Shader()
-    {}
-
-    virtual vec3 Shade_Surface(const Ray& ray,const vec3& intersection_point,
-        const vec3& normal,int recursion_depth) const=0;
+    virtual vec3 Shade_Surface(const Render_World& render_world,const Ray& ray,
+        const Hit& hit,const vec3& intersection_point,const vec3& normal,
+        int recursion_depth) const=0;
 };
 #endif
