@@ -13,6 +13,7 @@ Desktop.ini
 .*.swo
 .svn
 
+*.o
 *.lo
 *.la
 *.al
