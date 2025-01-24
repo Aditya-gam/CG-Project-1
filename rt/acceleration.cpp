@@ -282,7 +282,7 @@ std::pair<int,Hit> Acceleration::Closest_Intersection(const Ray& ray) const
         double t_next_y = next_boundary[1];
         double t_next_z = next_boundary[2];
 
-        double t_next = std::min({t_next_x, t_next_y, t_next_z});
+        double t_next = std::min(t_next_x, std::min(t_next_y, t_next_z));
 
         // If next crossing is beyond tmax, we are done.
         if(t_next > tmax) break;
