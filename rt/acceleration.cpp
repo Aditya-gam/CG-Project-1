@@ -70,50 +70,41 @@ ivec3 Acceleration::Cell_Index(const vec3& pt) const
 
 void Acceleration::Initialize()
 {
-    // Compute the cell size in each dimension.
-    // If num_cells[i] is zero for some reason, dx[i] might be invalid,
-    // but we assume the user sets a valid grid size > 0.
-    vec3 range = domain.hi - domain.lo;
-    for(int i = 0; i < 3; ++i)
+    // If no finite objects, there's nothing to populate in the grid.
+    // We'll rely on infinite_objects alone.
+    if(finite_objects.empty())
     {
-        // Avoid division by zero. If domain is degenerate, set dx to a small value.
-        if(num_cells[i] > 0)
-            dx[i] = range[i] / static_cast<double>(num_cells[i]);
-        else
-            dx[i] = 0.0;
+        // No finite objects => domain is irrelevant => skip building the grid
+        cells.clear(); // ensure cells is empty
+        return;
     }
 
-    // Allocate the cell storage: num_cells.x * num_cells.y * num_cells.z
-    cells.resize(num_cells[0] * num_cells[1] * num_cells[2]);
+    // Otherwise proceed as normal
+    vec3 range = domain.hi - domain.lo;
+    for(int i=0; i<3; i++)
+    {
+        if(num_cells[i] > 0) dx[i] = range[i]/(double)num_cells[i];
+        else dx[i] = 0.0;
+    }
 
-    // Populate each cell with the primitives that overlap it.
-    // Go through each stored finite primitive and figure out which cells
-    // its bounding box covers. Insert the primitive into those cells.
+    cells.resize(num_cells[0]*num_cells[1]*num_cells[2]);
+
+    // Fill the cells with the finite objects
     for(const auto& prim : finite_objects)
     {
-        // Get bounding box for this primitive part
         auto [b, _] = prim.obj->Bounding_Box(prim.part);
-
-        // Determine the cell range in each dimension
         ivec3 min_index = Cell_Index(b.lo);
         ivec3 max_index = Cell_Index(b.hi);
-
-        // Insert into all overlapping cells
         for(int i = min_index[0]; i <= max_index[0]; ++i)
+        for(int j = min_index[1]; j <= max_index[1]; ++j)
+        for(int k = min_index[2]; k <= max_index[2]; ++k)
         {
-            for(int j = min_index[1]; j <= max_index[1]; ++j)
-            {
-                for(int k = min_index[2]; k <= max_index[2]; ++k)
-                {
-                    cells[Flat_Index({i, j, k})].push_back(prim);
-                }
-            }
+            cells[Flat_Index({i,j,k})].push_back(prim);
         }
     }
-
-    // No longer need this vector once cells are populated.
     finite_objects.clear();
 }
+
 
 std::pair<int,Hit> Acceleration::Closest_Intersection(const Ray& ray) const
 {
@@ -136,6 +127,12 @@ std::pair<int,Hit> Acceleration::Closest_Intersection(const Ray& ray) const
                 best_id  = prim.id;
             }
         }
+    }
+
+    // If grid is empty, no finite objects => skip the domain intersection
+    if(cells.empty()) 
+    {
+        return {best_id, best_hit};
     }
 
     // We'll manually compute the intersection interval [tmin, tmax].
