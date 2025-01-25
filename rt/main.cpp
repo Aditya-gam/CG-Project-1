@@ -108,6 +108,13 @@ int main(int argc, char** argv)
     }
     assert(fin);
     parse.Parse_Input(render_world,fin);
+
+    for(int i = 0; i < (int)render_world.objects.size(); i++)
+    {
+        const auto& so = render_world.objects[i];
+        render_world.acceleration.Add_Object(so.object, i);
+    }
+    render_world.acceleration.Initialize();
     
     // Render the image
     render_world.Render();

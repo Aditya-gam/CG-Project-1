@@ -5,7 +5,7 @@
 #include <utility>
 #include "camera.h"
 #include "object.h"
-// #include "acceleration.h"
+#include "acceleration.h"
 
 class Light;
 class Shader;
@@ -44,7 +44,7 @@ public:
     bool enable_shadows = true;
     int recursion_depth_limit = 3;
 
-//     Acceleration acceleration;
+    Acceleration acceleration;
 
     Render_World() = default;
     ~Render_World();
