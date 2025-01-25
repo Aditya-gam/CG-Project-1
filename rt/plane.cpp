@@ -20,21 +20,22 @@ Hit Plane::Intersection(const Ray& ray, int part) const
     // Calculate the denominator of the intersection equation
     double denominator = dot(ray.direction, normal);
 
-    // Check if the ray is parallel to the plane
+    // Check if the ray is not parallel to the plane
     if (std::abs(denominator) > small_t)
     {
         // Compute the distance t along the ray
         double t = dot(x - ray.endpoint, normal) / denominator;
 
         // Check if the intersection is valid
-        if (t >= small_t)
+        if (t > small_t) // Ensure t is strictly greater than small_t to avoid self-intersection
         {
             hit.dist = t; // Set the intersection distance
         }
     }
 
-    return hit; // If no valid intersection, hit.dist will remain -1
+    return hit; // Return the hit, valid or not
 }
+
 
 vec3 Plane::Normal(const Ray& ray, const Hit& hit) const
 {

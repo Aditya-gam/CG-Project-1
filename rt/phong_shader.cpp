@@ -67,7 +67,9 @@ vec3 Phong_Shader::Shade_Surface(const Render_World& render_world, const Ray& ra
             auto [shadowed_object, shadow_hit] = render_world.Closest_Intersection(shadow_ray);
 
             // Determine if the light is blocked
-            if (shadowed_object.object && shadow_hit.dist < l.magnitude())
+            if (shadowed_object.object 
+                && shadow_hit.dist >= small_t       // Must be a valid intersection
+                && shadow_hit.dist < l.magnitude()) // Must be closer than the light
             {
                 in_shadow = true;
             }
@@ -86,7 +88,17 @@ vec3 Phong_Shader::Shade_Surface(const Render_World& render_world, const Ray& ra
             vec3 view_dir = -ray.direction.normalized();
             vec3 reflection_dir = (2.0 * dot(light_dir, norm) * norm - light_dir); // Correct reflection vector
 
-            double specular_factor = pow(std::max(dot(view_dir, reflection_dir.normalized()), 0.0), specular_power);
+            double refl_len2 = reflection_dir.magnitude_squared();
+            if(refl_len2 < 1e-16)
+            {
+                // reflection_dir is basically zero. 
+                // We can safely skip specular or define a fallback.
+                continue; // or specular = 0
+            }
+
+            // Otherwise do your normal specular math
+            vec3 reflection_norm = reflection_dir / std::sqrt(refl_len2); // normalized
+            double specular_factor = std::pow(std::max(dot(view_dir, reflection_norm), 0.0), specular_power);
             vec3 specular = specular_color * light_intensity * specular_factor;
             color += specular;
         }

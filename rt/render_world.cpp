@@ -17,37 +17,22 @@ Render_World::~Render_World()
 // Find and return the Hit structure for the closest intersection. Ensure that hit.dist >= small_t.
 std::pair<Shaded_Object, Hit> Render_World::Closest_Intersection(const Ray& ray) const
 {
-    if(enable_acceleration)
-    {
-        // Look up the closest intersection from the acceleration grid
-        auto [obj_id, hit] = acceleration.Closest_Intersection(ray);
+    Hit closest_hit;
+    closest_hit.dist = std::numeric_limits<double>::infinity(); // Initialize to infinity
+    Shaded_Object closest_object;
 
-        if(obj_id >= 0 && hit.Valid())
-        {
-            // If we found something, return that object's Shaded_Object
-            return { objects[obj_id], hit };
-        }
-        // else fallback to "no intersection"
-        return {{}, {}};
-    }
-    else
+    // Iterate through all objects to find the closest intersection
+    for (const auto& obj : objects)
     {
-        // The existing naive loop:
-        Hit closest_hit;
-        closest_hit.dist = std::numeric_limits<double>::infinity();
-        Shaded_Object closest_object;
-
-        for (const auto& obj : objects)
+        Hit hit = obj.object->Intersection(ray, -1); // Check intersection
+        if (hit.Valid() && hit.dist < closest_hit.dist && hit.dist >= small_t)
         {
-            Hit h = obj.object->Intersection(ray, -1);
-            if (h.Valid() && h.dist < closest_hit.dist && h.dist >= small_t)
-            {
-                closest_hit = h;
-                closest_object = obj;
-            }
+            closest_hit = hit;
+            closest_object = obj;
         }
-        return {closest_object, closest_hit};
     }
+
+    return {closest_object, closest_hit};
 }
 
 // Set up the initial view ray and call Cast_Ray

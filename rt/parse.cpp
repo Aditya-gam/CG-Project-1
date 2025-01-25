@@ -80,20 +80,6 @@ void Parse::Parse_Input(Render_World& render_world, std::istream& in)
         }
         assert(ss);
     }
-
-    // Now we've read the entire file. Check if 'width' and 'height' are valid:
-    if(width <= 0 || height <= 0)
-    {
-        // Option A: Use a default resolution
-        width = 640;
-        height = 480;
-        std::cerr<<"Warning: No valid 'size' found. Defaulting to 640x480.\n";
-
-        // Option B (instead) would be to abort:
-        // std::cerr<<"Error: No valid 'size' found. Exiting.\n";
-        // exit(1);
-    }
-    
     render_world.camera.Set_Resolution(ivec2(width,height));
 }
 

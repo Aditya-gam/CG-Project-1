@@ -65,4 +65,5 @@ inline int wrap(int i,int n)
     return k;
 }
 
-#endif // __MISC_H__
+#endif
+
