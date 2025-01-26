@@ -86,22 +86,23 @@ vec3 Phong_Shader::Shade_Surface(const Render_World& render_world, const Ray& ra
 
             // Specular component
             vec3 view_dir = -ray.direction.normalized();
-            vec3 reflection_dir = (2.0 * dot(light_dir, norm) * norm - light_dir); // Correct reflection vector
-
-            double refl_len2 = reflection_dir.magnitude_squared();
-            if(refl_len2 < 1e-16)
-            {
-                // reflection_dir is basically zero. 
-                // We can safely skip specular or define a fallback.
-                continue; // or specular = 0
-            }
-
-            // Otherwise do your normal specular math
-            vec3 reflection_norm = reflection_dir / std::sqrt(refl_len2); // normalized
-            double specular_factor = std::pow(std::max(dot(view_dir, reflection_norm), 0.0), specular_power);
+            vec3 reflection_dir = (2.0 * dot(light_dir, norm) * norm - light_dir).normalized();
+            double specular_factor = std::pow(std::max(dot(view_dir, reflection_dir), 0.0), specular_power);
             vec3 specular = specular_color * light_intensity * specular_factor;
             color += specular;
         }
+    }
+
+    // Recursive reflection
+    if (recursion_depth > render_world.recursion_depth_limit)
+    {
+        vec3 reflection_dir = - ray.direction + 2 * dot(ray.direction, norm) * norm;
+        Ray reflection_ray(offset_point, reflection_dir.normalized());
+        vec3 reflected_color = render_world.Cast_Ray(reflection_ray, recursion_depth + 1);
+
+        // Blend the reflected color with the local color (adjust blending ratio if needed)
+        double reflection_coefficient = 0.5; // Example value; this could depend on material properties
+        color = color * (1 - reflection_coefficient) + reflected_color * reflection_coefficient;
     }
 
     return color;

@@ -41,9 +41,14 @@ void Camera::Set_Resolution(const ivec2& number_pixels_input)
 // Find the world position of the input pixel
 vec3 Camera::World_Position(const ivec2& pixel_index)
 {
-    vec2 pixel_center = Cell_Center(pixel_index); // Get the center of the pixel in image plane coordinates
+    vec2 pixel_center = Cell_Center(pixel_index);
     vec3 world_position = film_position 
-                        + pixel_center[0] * horizontal_vector // Horizontal displacement
-                        + pixel_center[1] * vertical_vector;  // Vertical displacement
+                        + pixel_center[0] * horizontal_vector
+                        + pixel_center[1] * vertical_vector;
+
+    // std::cout << "Generated ray for pixel (" << pixel_index[0] << ", " 
+    //           << pixel_index[1] << "): " << world_position << std::endl;
+
     return world_position;
 }
+

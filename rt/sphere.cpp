@@ -46,6 +46,9 @@ Hit Sphere::Intersection(const Ray& ray, int part) const
         {
             hit.dist = t2;
         }
+
+        // std::cout << "Sphere " << name << " hit at distance: " << hit.dist 
+        //           << " with discriminant: " << discriminant << std::endl;
     }
 
     return hit; // Return a valid or invalid hit

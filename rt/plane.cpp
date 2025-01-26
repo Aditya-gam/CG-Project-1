@@ -30,12 +30,12 @@ Hit Plane::Intersection(const Ray& ray, int part) const
         if (t > small_t) // Ensure t is strictly greater than small_t to avoid self-intersection
         {
             hit.dist = t; // Set the intersection distance
+            // std::cout << "Plane " << name << " hit at distance: " << t << std::endl;
         }
     }
 
     return hit; // Return the hit, valid or not
 }
-
 
 vec3 Plane::Normal(const Ray& ray, const Hit& hit) const
 {

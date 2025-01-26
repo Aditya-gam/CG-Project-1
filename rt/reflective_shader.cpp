@@ -27,7 +27,7 @@ Shade_Surface(const Render_World& render_world, const Ray& ray, const Hit& hit,
     Ray reflected_ray(intersection_point + epsilon * normal, r_dir);
 
     // Handle reflection contribution
-    if (recursion_depth < render_world.recursion_depth_limit)
+    if (recursion_depth > render_world.recursion_depth_limit)
     {
         vec3 reflected_color = render_world.Cast_Ray(reflected_ray, recursion_depth + 1);
         color = (1 - reflectivity) * color + reflectivity * reflected_color;
