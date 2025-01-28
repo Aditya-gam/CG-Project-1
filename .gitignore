@@ -128,3 +128,5 @@ grading/
 graphics/
 *diff.png
 *output.png
+
+temp.cpp
