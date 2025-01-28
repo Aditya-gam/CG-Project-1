@@ -24,19 +24,36 @@ inline double Wrap_Float(double value, double max)
     return wrapped;
 }
 
+#include <cmath>
+#include <algorithm>
+#include "misc.h"  // Assuming Wrap_Float is defined in misc.h
+
 vec3 Texture::Get_Color(const vec2& uv) const
 {
-    // Wrap texture coordinates to ensure they are in the range [0, 1)
-    double u = Wrap_Float(uv[0], 1.0);
-    double v = Wrap_Float(uv[1], 1.0);
+    // 1. Wrap texture coordinates to ensure they are in the range [0, 1)
+    double u = Wrap_Float(uv[0], 1.0);  // Handle wrapping for u
+    double v = Wrap_Float(uv[1], 1.0);  // Handle wrapping for v
 
-    // Convert to pixel indices
-    int i = std::min(static_cast<int>(u * width), width - 1);
-    int j = std::min(static_cast<int>(v * height), height - 1);
+    // 2. Compute the pixel indices
+    int i = static_cast<int>(std::floor(u * width)) % width;   // Ensure 0 <= i < width
+    int j = static_cast<int>(std::floor(v * height)) % height; // Ensure 0 <= j < height
 
-    // Get the pixel color at the calculated index
+    // 3. Handle edge cases for negative wrapping
+    if (i < 0) i += width;   // Wrap negative indices
+    if (j < 0) j += height;  // Wrap negative indices
+
+    // 4. Access the pixel at the calculated index
     const Pixel& pixel = data[j * width + i];
 
-    // Convert the Pixel to vec3 (assuming RGB values are scaled between 0 and 255)
-    return vec3(pixel >> 24, (pixel >> 16) & 0xff, (pixel >> 8) & 0xff) / 255.0;
+    // 5. Convert the Pixel (assuming it is in ARGB format) to vec3
+    // Extract RGB components and normalize to [0, 1] range
+    double r = (pixel >> 24) & 0xFF;  // Extract red component
+    double g = (pixel >> 16) & 0xFF;  // Extract green component
+    double b = (pixel >> 8) & 0xFF;   // Extract blue component
+
+    return vec3(r, g, b) / 255.0;  // Scale RGB to [0, 1] range
 }
+
+
+
+

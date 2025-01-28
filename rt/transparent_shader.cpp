@@ -16,6 +16,11 @@ vec3 Transparent_Shader::
 Shade_Surface(const Render_World& render_world, const Ray& ray, const Hit& hit,
               const vec3& intersection_point, const vec3& normal, int recursion_depth) const
 {
+    if (recursion_depth > render_world.recursion_depth_limit)
+    {
+        return vec3(0, 0, 0); // Terminate recursion if depth exceeds the limit
+    }
+
     // Compute the base color using the underlying shader
     vec3 base_color = shader->Shade_Surface(render_world, ray, hit, intersection_point, normal, recursion_depth);
 
@@ -24,15 +29,15 @@ Shade_Surface(const Render_World& render_world, const Ray& ray, const Hit& hit,
     double n2 = index_of_refraction; // Refractive index of the object
     vec3 adjusted_normal = normal;
 
-    if (dot(ray.direction, normal) < 0) // Leaving the object
+    if (dot(ray.direction, normal) > 0) // Leaving the object
     {
-        std::swap(n1, n2);
-        adjusted_normal = -normal;
+        std::swap(n1, n2);               // Swap refractive indices
+        adjusted_normal = -normal;       // Flip the normal
     }
 
     // Compute the refraction direction using Snell's law
     double n_ratio = n1 / n2;
-    double cos_theta_i = dot(adjusted_normal, ray.direction);
+    double cos_theta_i = -dot(adjusted_normal, ray.direction);
     double sin2_theta_t = n_ratio * n_ratio * (1.0 - cos_theta_i * cos_theta_i);
 
     vec3 refracted_direction;
@@ -49,15 +54,23 @@ Shade_Surface(const Render_World& render_world, const Ray& ray, const Hit& hit,
     }
 
     // Compute the reflection direction
-    vec3 reflected_direction = -ray.direction + 2 * dot(ray.direction, adjusted_normal) * adjusted_normal;
+    vec3 reflected_direction = ray.direction - 2 * dot(ray.direction, adjusted_normal) * adjusted_normal;
 
     // Schlick approximation for reflectivity
     double r0 = pow((n1 - n2) / (n1 + n2), 2);
     double reflectivity = r0 + (1 - r0) * pow(1 - std::abs(cos_theta_i), 5);
 
+    // Handle grazing angles (near-parallel rays)
+    const double epsilon = small_t;
+    if (std::abs(cos_theta_i) < epsilon)
+    {
+        // At grazing angles, return pure reflection color
+        Ray reflected_ray(intersection_point + adjusted_normal * epsilon, reflected_direction);
+        return render_world.Cast_Ray(reflected_ray, recursion_depth + 1);
+    }
+
     // Cast reflection ray
-    const double epsilon = small_t; // Use Render_World's small_t for consistency
-    Ray reflected_ray(intersection_point, reflected_direction);
+    Ray reflected_ray(intersection_point + adjusted_normal * epsilon, reflected_direction);
 
     vec3 reflected_color(0, 0, 0);
     vec3 refracted_color(0, 0, 0);
@@ -65,20 +78,19 @@ Shade_Surface(const Render_World& render_world, const Ray& ray, const Hit& hit,
     // Reflection contribution
     if (recursion_depth < render_world.recursion_depth_limit)
     {
-        reflected_color = render_world.Cast_Ray(reflected_ray, ++recursion_depth);
+        reflected_color = render_world.Cast_Ray(reflected_ray, recursion_depth + 1);
 
         if (!total_internal_reflection)
         {
             // Refraction contribution
-            Ray refracted_ray(intersection_point, refracted_direction);
-            refracted_color = render_world.Cast_Ray(refracted_ray, ++recursion_depth);
+            Ray refracted_ray(intersection_point - adjusted_normal * epsilon, refracted_direction);
+            refracted_color = render_world.Cast_Ray(refracted_ray, recursion_depth + 1);
         }
-        
     }
 
     // Combine results using reflectivity, refraction, and opacity
-    vec3 color = (opacity) * base_color +
-                 (1-opacity) * (reflectivity * reflected_color + (1 - reflectivity) * refracted_color);
+    vec3 color = (opacity * base_color) +
+                 ((1 - opacity) * (reflectivity * reflected_color + (1 - reflectivity) * refracted_color));
 
     return color;
 }

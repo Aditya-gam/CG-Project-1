@@ -99,43 +99,44 @@ vec3 Mesh::Normal(const Ray& ray, const Hit& hit) const
     vec3 B = vertices[e[1]];
     vec3 C = vertices[e[2]];
 
-    vec3 normal = cross(B - A, C - A).normalized();
+    vec3 normal = cross(B-A, C-A).normalized();
     return normal;
 }
 
-// Helper routine to test for an intersection between a ray and a triangle.
 Hit Mesh::Intersect_Triangle(const Ray& ray, int tri) const
 {
     Hit hit;
     hit.triangle = -1;
     hit.dist = -1;
 
+    // Retrieve the triangle vertices
     ivec3 e = triangles[tri];
     vec3 A = vertices[e[0]];
     vec3 B = vertices[e[1]];
     vec3 C = vertices[e[2]];
+    
 
-    // Compute triangle plane normal
-    vec3 normal = cross(B - A, C - A);
-    double denominator = dot(normal, ray.direction);
+    // Compute the vectors
+    vec3 v = B - A; // Vector from C to A
+    vec3 w = C - A; // Vector from C to B
+    vec3 y = ray.endpoint - A;
+    vec3 u = ray.direction;
+    vec3 n = cross(B-A, C-A);
+
+    // Compute the denominator for the intersection test
+    double denominator = dot(n, ray.direction);    
 
     // Check if the ray is parallel to the triangle
     if (std::abs(denominator) < small_t) return hit;
+    
 
-    // Compute intersection with the plane
-    double t = dot(A - ray.endpoint, normal) / denominator;
-    if (t < small_t) return hit; // Intersection behind the ray origin
+    // Compute barycentric coordinates using the cross-product trick
+    double beta = dot(cross(u, w), y) / dot(cross(u,w), v);   
+    double gamma = dot(cross(u, v), y) / dot(cross(u,v), w);  
+    double alpha = 1.0 - beta - gamma;      
+    double t = -dot(cross(v,w), y) / dot(cross(v,w), u);     
 
-    // Compute intersection point
-    vec3 P = ray.Point(t);
-
-    // Compute barycentric coordinates
-    double total_area = normal.magnitude();
-    double alpha = cross(B - P, C - P).magnitude() / total_area;
-    double beta = cross(C - P, A - P).magnitude() / total_area;
-    double gamma = 1.0 - alpha - beta;
-
-    // Check barycentric coordinates
+    // Check if the intersection point lies within the triangle
     if (alpha >= -weight_tolerance && beta >= -weight_tolerance && gamma >= -weight_tolerance)
     {
         hit.dist = t;
@@ -144,6 +145,9 @@ Hit Mesh::Intersect_Triangle(const Ray& ray, int tri) const
 
     return hit;
 }
+
+
+
 
 std::pair<Box, bool> Mesh::Bounding_Box(int part) const
 {
