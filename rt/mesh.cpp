@@ -136,6 +136,9 @@ Hit Mesh::Intersect_Triangle(const Ray& ray, int tri) const
     double alpha = 1.0 - beta - gamma;      
     double t = -dot(cross(v,w), y) / dot(cross(v,w), u);     
 
+    // Log intersection test for debugging
+    Pixel_Print("mesh M triangle ", tri, " intersected; weights: (", alpha, " ", beta, " ", gamma, "); dist ", t);
+
     // Check if the intersection point lies within the triangle
     if (alpha >= -weight_tolerance && beta >= -weight_tolerance && gamma >= -weight_tolerance)
     {
