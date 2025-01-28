@@ -96,11 +96,16 @@ Shade_Surface(const Render_World& render_world, const Ray& ray, const Hit& hit,
         Debug_Ray("    Refracted ray", refracted_ray);
         refracted_color = render_world.Cast_Ray(refracted_ray, recursion_depth + 1);
         Pixel_Print("    Refracted color: ", Vec_To_String(refracted_color));
+        vec3 final_color = opacity * base_color + (1 - opacity) * (reflectivity * reflected_color + (1 - reflectivity) * refracted_color);
+        Pixel_Print("    Object color: ", Vec_To_String(base_color), "; final color: ", Vec_To_String(final_color));
+        return final_color;
     }
     else
     {
+        vec3 final_color = reflected_color;
         Pixel_Print("      ambient: (0 0 0)");
         Pixel_Print("      final color (0 0 0)");
+        return final_color;
     }
 
     // Combine results using reflectivity, refraction, and opacity
