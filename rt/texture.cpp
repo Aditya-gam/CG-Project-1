@@ -3,6 +3,7 @@
 #include "dump_png.h"
 #include "misc.h"
 #include <cmath>
+#include <algorithm>
 
 Texture::Texture(const Parse* parse, std::istream& in)
 {
@@ -25,7 +26,7 @@ inline double Wrap_Float(double value, double max)
 }
 
 #include <cmath>
-#include <algorithm>
+
 #include "misc.h"  // Assuming Wrap_Float is defined in misc.h
 
 vec3 Texture::Get_Color(const vec2& uv) const

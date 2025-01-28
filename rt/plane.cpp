@@ -13,8 +13,8 @@ Plane::Plane(const Parse* parse, std::istream& in)
 // Intersect with the plane. The plane's normal points outside.
 Hit Plane::Intersection(const Ray& ray, int part) const
 {
-    // Pixel_Print("Checking intersection with plane: ", name);
-    // Debug_Ray("Ray", ray);
+    Pixel_Print("Intersect test with ", name); // Debugging: Checking intersection
+    Debug_Ray("Ray", ray); // Print ray information
 
     Hit hit;
     hit.dist = -1; // Initialize to indicate no intersection
@@ -33,13 +33,13 @@ Hit Plane::Intersection(const Ray& ray, int part) const
         if (t > small_t) // Ensure t is strictly greater than small_t to avoid self-intersection
         {
             hit.dist = t; // Set the intersection distance
-            // std::cout << "Plane " << name << " hit at distance: " << t << std::endl;
-            // Pixel_Print("Intersection found at distance: ", t);
+            Pixel_Print("Intersection found at distance: ", t);
         }
     }
 
-    if (hit.dist < 0){
-        // Pixel_Print("No intersection with plane.");
+    if (hit.dist < 0)
+    {
+        Pixel_Print("No intersection with ", name);
     }
 
     return hit; // Return the hit, valid or not
@@ -47,8 +47,7 @@ Hit Plane::Intersection(const Ray& ray, int part) const
 
 vec3 Plane::Normal(const Ray& ray, const Hit& hit) const
 {
-    // The normal of the plane is constant
-    return normal;
+    return normal; // The normal of the plane is constant
 }
 
 std::pair<Box, bool> Plane::Bounding_Box(int part) const
