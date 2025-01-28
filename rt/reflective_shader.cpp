@@ -35,7 +35,7 @@ Shade_Surface(const Render_World& render_world, const Ray& ray, const Hit& hit,
     else // Recursion depth limit reached
     {
         color = (1 - reflectivity) * color;
-    }
+    }    
 
     return color;
 }

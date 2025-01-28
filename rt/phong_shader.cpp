@@ -23,6 +23,9 @@ Phong_Shader::Phong_Shader(const Parse* parse, std::istream& in)
 vec3 Phong_Shader::Shade_Surface(const Render_World& render_world, const Ray& ray, const Hit& hit,
                                  const vec3& intersection_point, const vec3& normal, int recursion_depth) const
 {
+    // Pixel_Print("Shading surface at: ", Vec_To_String(intersection_point));
+    // Pixel_Print("Normal: ", Vec_To_String(normal));
+
     vec3 color(0, 0, 0);
 
     // Ensure the normal is normalized
@@ -47,6 +50,7 @@ vec3 Phong_Shader::Shade_Surface(const Render_World& render_world, const Ray& ra
         vec3 ambient = render_world.ambient_intensity *
                        render_world.ambient_color->Get_Color(vec2(0, 0)) * ambient_color;
         color += ambient;
+        // Pixel_Print("Ambient color: ", Vec_To_String(ambient));
     }
 
     // Iterate over all lights in the scene
@@ -83,6 +87,7 @@ vec3 Phong_Shader::Shade_Surface(const Render_World& render_world, const Ray& ra
             double diffuse_factor = std::max(dot(norm, light_dir), 0.0);
             vec3 diffuse = diffuse_color * light_intensity * diffuse_factor;
             color += diffuse;
+            // Pixel_Print("Diffuse color: ", Vec_To_String(diffuse));
 
             // Specular component
             vec3 view_dir = -ray.direction.normalized();
@@ -104,6 +109,12 @@ vec3 Phong_Shader::Shade_Surface(const Render_World& render_world, const Ray& ra
         double reflection_coefficient = 0.5; // Example value; this could depend on material properties
         color = color * (1 - reflection_coefficient) + reflected_color * reflection_coefficient;
     }
-
+    // else if (recursion_depth == render_world.recursion_depth_limit)
+    // {
+    //     // Apply a final blending ratio for the last recursion depth
+    //     double reflection_coefficient = 0.5; // Example value; this could depend on material properties
+    //     color *= (1 - reflection_coefficient);
+    // }
+    // Pixel_Print("Final shaded color: ", Vec_To_String(color));
     return color;
 }

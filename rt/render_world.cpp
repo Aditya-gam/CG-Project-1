@@ -17,6 +17,9 @@ Render_World::~Render_World()
 // Find and return the Hit structure for the closest intersection. Ensure that hit.dist >= small_t.
 std::pair<Shaded_Object, Hit> Render_World::Closest_Intersection(const Ray& ray) const
 {
+    // Pixel_Print("Finding closest intersection for ray.");
+    // Debug_Ray("Ray", ray);
+
     Hit closest_hit;
     closest_hit.dist = std::numeric_limits<double>::infinity(); // Initialize to infinity
     Shaded_Object closest_object;
@@ -29,6 +32,8 @@ std::pair<Shaded_Object, Hit> Render_World::Closest_Intersection(const Ray& ray)
         {
             closest_hit = hit;
             closest_object = obj;
+            // Pixel_Print("Updated closest hit: ", "Object: ", obj.object->name, ", Distance: ", closest_hit.dist);
+
         }
     }
 
@@ -38,12 +43,15 @@ std::pair<Shaded_Object, Hit> Render_World::Closest_Intersection(const Ray& ray)
 // Set up the initial view ray and call Cast_Ray
 void Render_World::Render_Pixel(const ivec2& pixel_index)
 {
+    // Pixel_Print("Rendering pixel: ", pixel_index);
+
     Ray ray;
     ray.endpoint = camera.position; // Camera position as the ray origin
     ray.direction = (camera.World_Position(pixel_index) - camera.position).normalized(); // Direction toward the pixel
 
     vec3 color = Cast_Ray(ray, 1); // Cast ray with recursion depth = 1
     camera.Set_Pixel(pixel_index, Pixel_Color(color)); // Set the pixel color
+    // Pixel_Print("Pixel color: ", Vec_To_String(color));
 }
 
 void Render_World::Render()
@@ -61,8 +69,13 @@ void Render_World::Render()
 // or the background color if there is no object intersection
 vec3 Render_World::Cast_Ray(const Ray& ray, int recursion_depth) const
 {
-    if (recursion_depth > recursion_depth_limit)
+    // Pixel_Print("Casting ray at recursion depth: ", recursion_depth);
+    // Debug_Ray("Ray", ray);
+
+    if (recursion_depth > recursion_depth_limit){
+        // Pixel_Print("Recursion depth limit exceeded. Returning black.");
         return vec3(0, 0, 0); // Return black if recursion depth exceeds the limit
+    }
 
     auto [closest_object, closest_hit] = Closest_Intersection(ray);
 
@@ -72,14 +85,19 @@ vec3 Render_World::Cast_Ray(const Ray& ray, int recursion_depth) const
         vec3 intersection_point = ray.Point(closest_hit.dist);
         vec3 normal = closest_object.object->Normal(ray, closest_hit);
 
+        // Pixel_Print("Intersection found at: ", Vec_To_String(intersection_point));
+        // Pixel_Print("Normal at intersection: ", Vec_To_String(normal));
+
         // Shade the surface using the object's shader
         return closest_object.shader->Shade_Surface(*this, ray, closest_hit, intersection_point, normal, recursion_depth);
     }
     else if (background_shader)
     {
+        // Pixel_Print("No intersection. Using background shader.");
         // Use the background shader if no object is intersected
         return background_shader->Shade_Surface(*this, ray, {}, {}, {}, recursion_depth);
     }
 
+    // Pixel_Print("No intersection and no background shader. Returning black.");
     return vec3(0, 0, 0); // Return black if no object and no background shader
 }

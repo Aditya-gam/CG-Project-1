@@ -13,6 +13,9 @@ Plane::Plane(const Parse* parse, std::istream& in)
 // Intersect with the plane. The plane's normal points outside.
 Hit Plane::Intersection(const Ray& ray, int part) const
 {
+    // Pixel_Print("Checking intersection with plane: ", name);
+    // Debug_Ray("Ray", ray);
+
     Hit hit;
     hit.dist = -1; // Initialize to indicate no intersection
     hit.triangle = part; // For compatibility with meshes
@@ -31,7 +34,12 @@ Hit Plane::Intersection(const Ray& ray, int part) const
         {
             hit.dist = t; // Set the intersection distance
             // std::cout << "Plane " << name << " hit at distance: " << t << std::endl;
+            // Pixel_Print("Intersection found at distance: ", t);
         }
+    }
+
+    if (hit.dist < 0){
+        // Pixel_Print("No intersection with plane.");
     }
 
     return hit; // Return the hit, valid or not

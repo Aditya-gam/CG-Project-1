@@ -16,6 +16,9 @@ Sphere::Sphere(const Parse* parse, std::istream& in)
 
 Hit Sphere::Intersection(const Ray& ray, int part) const
 {
+    // Pixel_Print("Checking intersection with sphere: ", name);
+    // Debug_Ray("Ray", ray);
+
     vec3 oc = ray.endpoint - center;
     double a = dot(ray.direction, ray.direction);
     double b = 2 * dot(ray.direction, oc);
@@ -47,8 +50,18 @@ Hit Sphere::Intersection(const Ray& ray, int part) const
             hit.dist = t2;
         }
 
+        if (hit.dist > 0)
+        {
+            // Pixel_Print("Intersection found at distance: ", hit.dist);
+        }
+
         // std::cout << "Sphere " << name << " hit at distance: " << hit.dist 
         //           << " with discriminant: " << discriminant << std::endl;
+    }
+
+    if (hit.dist < 0)
+    {
+        // Pixel_Print("No intersection with sphere.");
     }
 
     return hit; // Return a valid or invalid hit
