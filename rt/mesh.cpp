@@ -114,43 +114,47 @@ Hit Mesh::Intersect_Triangle(const Ray& ray, int tri) const
     vec3 A = vertices[e[0]];
     vec3 B = vertices[e[1]];
     vec3 C = vertices[e[2]];
-    
 
-    // Compute the vectors
-    vec3 v = B - A; // Vector from C to A
-    vec3 w = C - A; // Vector from C to B
-    vec3 y = ray.endpoint - A;
-    vec3 u = ray.direction;
-    vec3 n = cross(B-A, C-A);
-
-    // Compute the denominator for the intersection test
-    double denominator = dot(n, ray.direction);    
+    // Compute the normal for the triangle
+    vec3 normal = cross(B - A, C - A);
+    double denominator = dot(normal, ray.direction);
 
     // Check if the ray is parallel to the triangle
     if (std::abs(denominator) < small_t) return hit;
-    
 
-    // Compute barycentric coordinates using the cross-product trick
-    double beta = dot(cross(u, w), y) / dot(cross(u,w), v);   
-    double gamma = dot(cross(u, v), y) / dot(cross(u,v), w);  
-    double alpha = 1.0 - beta - gamma;      
-    double t = -dot(cross(v,w), y) / dot(cross(v,w), u);     
+    // Compute barycentric coordinates
+    vec3 v = B - A;
+    vec3 w = C - A;
+    vec3 y = ray.endpoint - A;
+    vec3 u = ray.direction;
 
-    // Log intersection test for debugging
-    Pixel_Print("mesh M triangle ", tri, " intersected; weights: (", alpha, " ", beta, " ", gamma, "); dist ", t);
+    double beta = dot(cross(u, w), y) / dot(cross(u, w), v);
+    double gamma = dot(cross(u, v), y) / dot(cross(u, v), w);
+    double alpha = 1.0 - beta - gamma;
+    double t = -dot(cross(v, w), y) / dot(cross(v, w), u);
 
-    // Check if the intersection point lies within the triangle
+    // Pixel_Print("mesh M triangle ", tri, " intersected; weights: (", alpha, " ", beta, " ", gamma, "); dist ", t);
+
     if (alpha >= -weight_tolerance && beta >= -weight_tolerance && gamma >= -weight_tolerance)
     {
         hit.dist = t;
         hit.triangle = tri;
+
+        // Compute interpolated texture coordinates
+        if (!triangle_texture_index.empty() && tri < (int)triangle_texture_index.size())
+        {
+            ivec3 tex_idx = triangle_texture_index[tri];
+            vec2 uvA = uvs[tex_idx[0]];
+            vec2 uvB = uvs[tex_idx[1]];
+            vec2 uvC = uvs[tex_idx[2]];
+
+            hit.uv = alpha * uvA + beta * uvB + gamma * uvC;
+            // Pixel_Print("Computed UV: (", hit.uv[0], " ", hit.uv[1], ")");
+        }
     }
 
     return hit;
 }
-
-
-
 
 std::pair<Box, bool> Mesh::Bounding_Box(int part) const
 {

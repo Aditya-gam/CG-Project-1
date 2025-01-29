@@ -40,6 +40,7 @@ vec3 Phong_Shader::Shade_Surface(const Render_World& render_world, const Ray& ra
     vec3 diffuse_color = color_diffuse ? color_diffuse->Get_Color(hit.uv) : vec3(0, 0, 0);
     vec3 specular_color = color_specular ? color_specular->Get_Color(hit.uv) : vec3(0, 0, 0);
 
+    // Pixel_Print("texture (u,v): (", hit.uv[0], " ", hit.uv[1], ")");
     // Small epsilon offset to avoid self-intersection
     const double epsilon = 1e-4;
     vec3 offset_point = intersection_point + norm * epsilon;
@@ -67,7 +68,8 @@ vec3 Phong_Shader::Shade_Surface(const Render_World& render_world, const Ray& ra
         bool in_shadow = false;
         if (render_world.enable_shadows)
         {
-            Ray shadow_ray(offset_point, l);
+            // Ray shadow_ray(offset_point, l);
+            Ray shadow_ray(intersection_point + norm * small_t, l);
             auto [shadowed_object, shadow_hit] = render_world.Closest_Intersection(shadow_ray);
 
             // Determine if the light is blocked
