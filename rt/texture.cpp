@@ -32,7 +32,7 @@ vec3 Texture::Get_Color(const vec2& uv) const
     double v = Wrap_Float(uv[1], 1.0);  // Handle wrapping for v
 
     // Debugging: Log texture coordinates
-    Pixel_Print("texture (u,v): (", u, " ", v, ")");
+    // Pixel_Print("texture (u,v): (", u, " ", v, ")");
 
     // 2. Compute the pixel indices
     int i = static_cast<int>(std::floor(u * width)) % width;   // Ensure 0 <= i < width
@@ -43,7 +43,7 @@ vec3 Texture::Get_Color(const vec2& uv) const
     if (j < 0) j += height;  // Wrap negative indices
 
     // Debugging: Log computed pixel indices
-    Pixel_Print("(i,j): ", i, " ", j);
+    // Pixel_Print("(i,j): ", i, " ", j);
 
     // 4. Access the pixel at the calculated index
     const Pixel& pixel = data[j * width + i];
@@ -55,7 +55,7 @@ vec3 Texture::Get_Color(const vec2& uv) const
     double b = (pixel >> 8) & 0xFF;   // Extract blue component
 
     // Debugging: Log extracted color values
-    Pixel_Print("color: (", r / 255.0, " ", g / 255.0, " ", b / 255.0, ")");
+    // Pixel_Print("color: (", r / 255.0, " ", g / 255.0, " ", b / 255.0, ")");
 
     return vec3(r, g, b) / 255.0;  // Scale RGB to [0, 1] range
 }
